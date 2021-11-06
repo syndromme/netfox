@@ -251,7 +251,19 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
         case .JSON:
             do {
                 let rawJsonData = try JSONSerialization.jsonObject(with: rawData, options: [])
-                let prettyPrintedString = try JSONSerialization.data(withJSONObject: rawJsonData, options: [.prettyPrinted])
+                var prettyPrintedString: Data
+                if let responseReverseAlpha = (rawJsonData as AnyObject).value(forKey: "Alpha") as? NSString {
+                var index = responseReverseAlpha.length
+                  var responseAlpha = ""
+                  while index > 0 {
+                      index -= 1
+                      let subStrRange = NSRange(location: index, length: 1)
+                      responseAlpha += responseReverseAlpha.substring(with: subStrRange)
+                  }
+                  prettyPrintedString = Data(base64Encoded: responseAlpha, options: [])!
+                } else {
+                  prettyPrintedString = try JSONSerialization.data(withJSONObject: rawJsonData , options: [.prettyPrinted])
+                }
                 return NSString(data: prettyPrintedString, encoding: String.Encoding.utf8.rawValue)
             } catch {
                 return nil
