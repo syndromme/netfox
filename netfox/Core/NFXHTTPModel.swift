@@ -105,6 +105,7 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
     
     func saveRequestBodyData(_ data: Data)
     {
+        let data = reverse64EncodingAlpha(rawData: data)
         let tempBodyString = NSString.init(data: data, encoding: String.Encoding.utf8.rawValue)
         self.requestBodyLength = data.count
         if (tempBodyString != nil) {
@@ -120,27 +121,7 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
             bodyString = data.base64EncodedString(options: .endLineWithLineFeed) as NSString?
 
         } else {
-            if let tempBodyString = NSString.init(data: data, encoding: String.Encoding.utf8.rawValue) {
-              do {
-                let rawJsonData = try JSONSerialization.jsonObject(with: data, options: [])
-                var prettyPrintedString: Data
-                if let responseReverseAlpha = (rawJsonData as AnyObject).value(forKey: "Alpha") as? NSString {
-                var index = responseReverseAlpha.length
-                  var responseAlpha = ""
-                  while index > 0 {
-                      index -= 1
-                      let subStrRange = NSRange(location: index, length: 1)
-                      responseAlpha += responseReverseAlpha.substring(with: subStrRange)
-                  }
-                  prettyPrintedString = Data(base64Encoded: responseAlpha, options: [])!
-                } else {
-                  prettyPrintedString = try JSONSerialization.data(withJSONObject: rawJsonData , options: [.prettyPrinted])
-                }
-                bodyString =  NSString(data: prettyPrintedString, encoding: String.Encoding.utf8.rawValue)
-              } catch {
-                bodyString = tempBodyString
-              }
-            }
+            bodyString =  NSString(data: reverse64EncodingAlpha(rawData: data), encoding: String.Encoding.utf8.rawValue)
         }
         
         if (bodyString != nil) {
@@ -267,26 +248,7 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
     {
         switch type {
         case .JSON:
-            do {
-                let rawJsonData = try JSONSerialization.jsonObject(with: rawData, options: [])
-                var prettyPrintedString: Data
-                if let responseReverseAlpha = (rawJsonData as AnyObject).value(forKey: "Alpha") as? NSString {
-                var index = responseReverseAlpha.length
-                  var responseAlpha = ""
-                  while index > 0 {
-                      index -= 1
-                      let subStrRange = NSRange(location: index, length: 1)
-                      responseAlpha += responseReverseAlpha.substring(with: subStrRange)
-                  }
-                  prettyPrintedString = Data(base64Encoded: responseAlpha, options: [])!
-                } else {
-                  prettyPrintedString = try JSONSerialization.data(withJSONObject: rawJsonData , options: [.prettyPrinted])
-                }
-                return NSString(data: prettyPrintedString, encoding: String.Encoding.utf8.rawValue)
-            } catch {
-                return nil
-            }
-        
+            return NSString(data: reverse64EncodingAlpha(rawData: rawData), encoding: String.Encoding.utf8.rawValue)
         default:
             return nil
             
@@ -378,4 +340,26 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
         
         return log;
     }
+  
+  private func reverse64EncodingAlpha(rawData: Data) -> Data {
+    do {
+        let rawJsonData = try JSONSerialization.jsonObject(with: rawData, options: [])
+        var prettyPrintedString: Data
+        if let responseReverseAlpha = (rawJsonData as AnyObject).value(forKey: "Alpha") as? NSString {
+        var index = responseReverseAlpha.length
+          var responseAlpha = ""
+          while index > 0 {
+              index -= 1
+              let subStrRange = NSRange(location: index, length: 1)
+              responseAlpha += responseReverseAlpha.substring(with: subStrRange)
+          }
+          prettyPrintedString = Data(base64Encoded: responseAlpha, options: [])!
+        } else {
+          prettyPrintedString = try JSONSerialization.data(withJSONObject: rawJsonData , options: [.prettyPrinted])
+        }
+        return prettyPrintedString
+    } catch {
+        return rawData
+    }
+  }
 }
